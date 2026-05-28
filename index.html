@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cm — Service Bookmarks (mockup)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Mirror tailwind.config.js from console/v1/app
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#137fed',
+            light: '#88a1bd',
+            dark: '#101922',
+            dark2: '#111a22',
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    /* Spinner used in IN_PROGRESS step state */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-right-color: currentColor;
+      border-radius: 9999px;
+      animation: spin 0.7s linear infinite;
+    }
+    /* Side-panel slide transition */
+    .panel-enter { transform: translateX(100%); }
+    .panel-active { transform: translateX(0); transition: transform 250ms ease-out; }
+    /* Step fade-in */
+    @keyframes step-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .step-in { animation: step-in 200ms ease-out; }
+    /* Markdown-ish styling for the final report body */
+    .md-body h1 { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .md-body h2 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; }
+    .md-body p  { font-size: 0.875rem; line-height: 1.5; margin: 0 0 0.6rem; color: inherit; }
+    .md-body ul { font-size: 0.875rem; list-style: disc; padding-left: 1.25rem; margin: 0 0 0.6rem; }
+    .md-body li { margin: 0.15rem 0; }
+    .md-body code { background: rgba(127,127,127,0.15); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
+  </style>
+</head>
+<body class="bg-white dark:bg-dark2 text-gray-900 dark:text-white">
+
+  <!-- =================== SIDEBAR =================== -->
+  <aside class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56 lg:flex-col">
+    <div class="flex min-h-0 flex-1 flex-col bg-white dark:bg-dark border-r border-gray-200 dark:border-gray-600">
+      <div class="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+        <!-- Logo -->
+        <div class="flex flex-shrink-0 items-center gap-2 px-4">
+          <div class="p-2 rounded-lg bg-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-white">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold text-primary dark:text-white">Cloud Run</h1>
+            <h2 class="uppercase text-gray-500 text-xs font-bold">Observability</h2>
+          </div>
+        </div>
+        <!-- Nav -->
+        <nav class="mt-5 flex flex-col gap-2 px-4">
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+            <p class="group-hover:text-gray-500">Dashboard</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+            <p class="group-hover:text-gray-500">Products</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 0 0-.12-1.03l-2.268-9.64a3.375 3.375 0 0 0-3.285-2.602H7.923a3.375 3.375 0 0 0-3.285 2.602l-2.268 9.64a4.5 4.5 0 0 0-.12 1.03v.228m19.5 0a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3m19.5 0a3 3 0 0 0-3-3H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008v-.008Zm-3 0h.008v.008h-.008v-.008Z"/></svg>
+            <p class="group-hover:text-gray-500">Services</p>
+          </a>
+
+          <!-- NEW: Bookmarks (active) -->
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md bg-primary/15 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+            <p>Bookmarks</p>
+          </a>
+
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+            <p class="group-hover:text-gray-500">Logs</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
+            <p class="group-hover:text-gray-500">Metrics</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+            <p class="group-hover:text-gray-500">Comparison</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+            <p class="group-hover:text-gray-500">Incidents</p>
+          </a>
+          <a class="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-primary/15">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-4 h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+            <p class="group-hover:text-gray-500">Settings</p>
+          </a>
+        </nav>
+      </div>
+      <!-- User -->
+      <div class="flex flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+        <div class="flex items-center">
+          <div class="h-8 w-8 rounded-full bg-teal-600 flex items-center justify-center">
+            <span class="text-sm font-medium text-white">JD</span>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">John Doe</p>
+            <p class="text-xs font-medium text-gray-500">Admin</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =================== MAIN COLUMN =================== -->
+  <div class="w-full lg:pl-56">
+
+    <!-- TopBar -->
+    <header class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-dark2 dark:text-light px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+      <div class="flex flex-1 items-center">
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Bookmarks</h1>
+      </div>
+      <div class="flex items-center gap-x-3 lg:gap-x-4">
+        <!-- Active context pill -->
+        <div class="hidden xl:flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/30">
+          <span class="font-mono">voyage-vp-dev-vzu</span>
+        </div>
+        <select class="block w-32 sm:w-44 rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-primary">
+          <option>voyage</option>
+          <option>dealade</option>
+          <option>ca</option>
+          <option>cm</option>
+        </select>
+        <select class="block w-36 sm:w-44 rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-primary">
+          <option>dev · voyage-dev</option>
+          <option>staging · voyage-staging</option>
+          <option>prod · voyage-prod</option>
+        </select>
+        <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:bg-gray-600"></div>
+        <!-- Theme toggle -->
+        <button id="themeToggle" type="button" class="p-2 text-gray-500 hover:text-primary" title="Toggle dark mode">
+          <svg id="themeIconDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+          <svg id="themeIconLight" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+        </button>
+        <!-- Notifications -->
+        <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 relative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
+          <span class="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">3</span>
+        </button>
+        <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:bg-gray-600"></div>
+        <div class="h-8 w-8 rounded-full bg-teal-600 flex items-center justify-center">
+          <span class="text-sm font-medium text-white">JD</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main>
+      <div class="mx-auto max-w-8xl">
+        <div class="space-y-6 px-6 py-4">
+
+          <!-- Page header -->
+          <div class="flex items-start justify-between px-3 xl:px-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Service Bookmarks</h1>
+              <p class="mt-1 text-sm text-gray-500 dark:text-light">
+                Save a service for quick access, then generate an on-demand diagnostic report.
+              </p>
+            </div>
+            <button onclick="openAddModal()"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-blue-700">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              Add Bookmark
+            </button>
+          </div>
+
+          <!-- Table -->
+          <div class="px-3 xl:px-4">
+            <div class="overflow-hidden shadow align-middle w-full rounded-lg border border-gray-200 dark:border-gray-700">
+              <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-500/15">
+                  <tr class="text-left text-xs font-medium text-gray-500 dark:text-white">
+                    <th class="px-6 py-3 uppercase tracking-wider">Product</th>
+                    <th class="px-6 py-3 uppercase tracking-wider">Environment</th>
+                    <th class="px-6 py-3 uppercase tracking-wider">Service</th>
+                    <th class="px-6 py-3 uppercase tracking-wider">Note</th>
+                    <th class="px-6 py-3 uppercase tracking-wider">Created</th>
+                    <th class="px-6 py-3 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bookmarksBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                  <!-- Rows injected by JS -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Empty state -->
+            <div id="emptyState" class="hidden mt-12 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="mx-auto h-14 w-14 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+              <p class="mt-2 text-sm text-gray-500">No bookmarks yet. Save a service to get started.</p>
+              <button onclick="openAddModal()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-blue-700">+ Add Bookmark</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =================== ADD BOOKMARK MODAL =================== -->
+  <div id="addModalRoot" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-gray-900/60" onclick="closeAddModal()"></div>
+    <div class="relative mx-auto mt-24 max-w-md bg-white dark:bg-dark2 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Add Bookmark</h3>
+        <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-6 py-4 space-y-4">
+        <div>
+          <label class="block text-xs font-medium uppercase text-gray-700 dark:text-gray-400 mb-1">Product</label>
+          <select id="addProduct" onchange="onProductChange()" class="block w-full rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 px-3 text-sm focus:border-primary focus:outline-none focus:ring-primary">
+            <option value="">— Select product —</option>
+            <option value="voyage">voyage</option>
+            <option value="dealade">dealade</option>
+            <option value="ca">ca</option>
+            <option value="cm">cm</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase text-gray-700 dark:text-gray-400 mb-1">Environment</label>
+          <select id="addEnv" disabled onchange="onEnvChange()" class="block w-full rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 px-3 text-sm focus:border-primary focus:outline-none focus:ring-primary disabled:opacity-50">
+            <option value="">— Select environment —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase text-gray-700 dark:text-gray-400 mb-1">Service</label>
+          <select id="addService" disabled onchange="onServiceChange()" class="block w-full rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 px-3 text-sm focus:border-primary focus:outline-none focus:ring-primary disabled:opacity-50">
+            <option value="">— Select service —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase text-gray-700 dark:text-gray-400 mb-1">Note <span class="text-gray-400 normal-case">(optional)</span></label>
+          <input id="addNote" type="text" maxlength="200" placeholder="Why are you bookmarking this?" class="block w-full rounded-md dark:bg-gray-500/15 border-gray-300 dark:border-gray-700 py-2 px-3 text-sm focus:border-primary focus:outline-none focus:ring-primary" />
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
+        <button onclick="closeAddModal()" class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/30">Cancel</button>
+        <button id="saveBtn" onclick="saveBookmark()" disabled class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Save Bookmark</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== REPORT SIDE-PANEL =================== -->
+  <div id="panelRoot" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-gray-900/40" onclick="closePanel()"></div>
+    <aside id="panelInner" class="absolute right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-dark2 border-l border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col panel-enter">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-gray-500">Bookmark Report</div>
+          <h3 id="panelTitle" class="mt-1 text-base font-semibold text-gray-900 dark:text-white">projects-v1</h3>
+          <p id="panelSubtitle" class="text-xs text-gray-500 mt-0.5">voyage · dev · voyage-vp-dev-vzu / europe-west1</p>
+        </div>
+        <button onclick="closePanel()" class="text-gray-400 hover:text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Activity card -->
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs uppercase tracking-wider text-gray-500">Activity</div>
+          <button id="cancelBtn" onclick="cancelStream()" class="hidden text-xs font-medium text-red-600 hover:text-red-700">Cancel</button>
+        </div>
+        <ol id="stepList" class="space-y-2"></ol>
+      </div>
+
+      <!-- Final markdown report -->
+      <div class="flex-1 overflow-auto px-6 py-5">
+        <div id="reportBody" class="md-body text-gray-800 dark:text-gray-200 hidden"></div>
+        <div id="reportPlaceholder" class="text-sm text-gray-400 italic">Report will appear here once the activity above completes.</div>
+        <div id="reportError" class="hidden mt-4 rounded-md bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-700 p-3">
+          <p class="text-sm text-red-800 dark:text-red-300"><strong>Stream error:</strong> <span id="reportErrorMsg"></span></p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- =================== SCRIPT =================== -->
+  <script>
+    // ===== Theme toggle =====
+    const themeBtn = document.getElementById('themeToggle');
+    const iconDark = document.getElementById('themeIconDark');
+    const iconLight = document.getElementById('themeIconLight');
+    function applyTheme(dark) {
+      document.documentElement.classList.toggle('dark', dark);
+      iconDark.classList.toggle('hidden', dark);
+      iconLight.classList.toggle('hidden', !dark);
+    }
+    themeBtn.addEventListener('click', () => applyTheme(!document.documentElement.classList.contains('dark')));
+
+    // ===== Sample catalog data (for the modal cascading dropdowns) =====
+    const CATALOG = {
+      voyage: {
+        dev:        { projectId: 'voyage-vp-dev-vzu',     region: 'europe-west1', services: ['projects-v1', 'pricing-v1', 'auth-v1', 'notifications-v1'] },
+        staging:    { projectId: 'voyage-vp-staging-h7q', region: 'europe-west1', services: ['projects-v1', 'pricing-v1', 'auth-v1'] },
+        production: { projectId: 'voyage-vp-prod-m3x',    region: 'europe-west1', services: ['projects-v1', 'pricing-v1', 'auth-v1'] },
+      },
+      dealade: {
+        dev:        { projectId: 'dealade-dl-dev-9kp', region: 'europe-west1', services: ['pricing-engine-v1', 'matchmaker-v1', 'console-v1'] },
+        staging:    { projectId: 'dealade-dl-stg-2nm', region: 'europe-west1', services: ['pricing-engine-v1', 'matchmaker-v1'] },
+        production: { projectId: 'dealade-dl-prd-7zr', region: 'europe-west1', services: ['pricing-engine-v1', 'matchmaker-v1'] },
+      },
+      ca: {
+        dev:        { projectId: 'ca-dev-x4y',  region: 'europe-west1', services: ['auth-v1', 'iam-v1'] },
+        production: { projectId: 'ca-prod-q8w', region: 'europe-west1', services: ['auth-v1', 'iam-v1'] },
+      },
+      cm: {
+        dev:        { projectId: 'techbridge-cm-dev-wy4', region: 'europe-west1', services: ['console-v1', 'cloudrunlogquerier-v1', 'agent-orchestrator-v1'] },
+      },
+    };
+
+    // ===== Bookmarks state =====
+    let bookmarks = [
+      { id: 'bm_01', product: 'voyage',  env: 'dev',        service: 'projects-v1',     note: 'Customer churn investigation', created: '2026-05-20' },
+      { id: 'bm_02', product: 'dealade', env: 'staging',    service: 'pricing-engine-v1', note: 'Latency spikes during peak',  created: '2026-05-18' },
+      { id: 'bm_03', product: 'ca',      env: 'production', service: 'auth-v1',         note: '',                              created: '2026-05-15' },
+    ];
+
+    function renderBookmarks() {
+      const tbody = document.getElementById('bookmarksBody');
+      const empty = document.getElementById('emptyState');
+      const table = tbody.closest('div');
+      if (bookmarks.length === 0) {
+        tbody.innerHTML = '';
+        table.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+      table.classList.remove('hidden');
+      empty.classList.add('hidden');
+      tbody.innerHTML = bookmarks.map(b => `
+        <tr class="text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-dark">
+          <td class="px-6 py-4 whitespace-nowrap"><span class="font-medium text-gray-900 dark:text-white">${b.product}</span></td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-md ${envBadge(b.env)}">${b.env}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap font-mono text-primary">${b.service}</td>
+          <td class="px-6 py-4 text-gray-500 dark:text-light">${b.note || '<span class="italic text-gray-400">—</span>'}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-gray-500">${b.created}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end gap-2">
+              <button onclick="openPanel('${b.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-white hover:bg-blue-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-3.5 w-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+                Generate Report
+              </button>
+              <button onclick="deleteBookmark('${b.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-3.5 w-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function envBadge(env) {
+      switch (env) {
+        case 'production': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+        case 'staging':    return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300';
+        default:           return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+      }
+    }
+
+    // ===== Add Bookmark modal =====
+    function openAddModal() {
+      document.getElementById('addModalRoot').classList.remove('hidden');
+      document.getElementById('addProduct').value = '';
+      document.getElementById('addEnv').innerHTML = '<option value="">— Select environment —</option>';
+      document.getElementById('addEnv').disabled = true;
+      document.getElementById('addService').innerHTML = '<option value="">— Select service —</option>';
+      document.getElementById('addService').disabled = true;
+      document.getElementById('addNote').value = '';
+      document.getElementById('saveBtn').disabled = true;
+    }
+    function closeAddModal() {
+      document.getElementById('addModalRoot').classList.add('hidden');
+    }
+    function onProductChange() {
+      const p = document.getElementById('addProduct').value;
+      const envSel = document.getElementById('addEnv');
+      const svcSel = document.getElementById('addService');
+      envSel.innerHTML = '<option value="">— Select environment —</option>';
+      svcSel.innerHTML = '<option value="">— Select service —</option>';
+      svcSel.disabled = true;
+      if (!p) { envSel.disabled = true; updateSaveBtn(); return; }
+      Object.keys(CATALOG[p]).forEach(e => envSel.insertAdjacentHTML('beforeend', `<option value="${e}">${e}</option>`));
+      envSel.disabled = false;
+      updateSaveBtn();
+    }
+    function onEnvChange() {
+      const p = document.getElementById('addProduct').value;
+      const e = document.getElementById('addEnv').value;
+      const svcSel = document.getElementById('addService');
+      svcSel.innerHTML = '<option value="">— Select service —</option>';
+      if (!e) { svcSel.disabled = true; updateSaveBtn(); return; }
+      CATALOG[p][e].services.forEach(s => svcSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
+      svcSel.disabled = false;
+      updateSaveBtn();
+    }
+    function onServiceChange() { updateSaveBtn(); }
+    function updateSaveBtn() {
+      const ok = document.getElementById('addProduct').value && document.getElementById('addEnv').value && document.getElementById('addService').value;
+      document.getElementById('saveBtn').disabled = !ok;
+    }
+    function saveBookmark() {
+      const p = document.getElementById('addProduct').value;
+      const e = document.getElementById('addEnv').value;
+      const s = document.getElementById('addService').value;
+      const n = document.getElementById('addNote').value.trim();
+      bookmarks.unshift({
+        id: 'bm_' + Math.random().toString(36).slice(2, 8),
+        product: p, env: e, service: s, note: n,
+        created: new Date().toISOString().slice(0, 10),
+      });
+      closeAddModal();
+      renderBookmarks();
+    }
+    function deleteBookmark(id) {
+      if (!confirm('Delete this bookmark?')) return;
+      bookmarks = bookmarks.filter(b => b.id !== id);
+      renderBookmarks();
+    }
+
+    // ===== Report side-panel + simulated streaming =====
+    let streamTimers = [];
+
+    function openPanel(bookmarkId) {
+      const b = bookmarks.find(x => x.id === bookmarkId);
+      if (!b) return;
+      const env = CATALOG[b.product]?.[b.env];
+
+      document.getElementById('panelTitle').textContent = b.service;
+      document.getElementById('panelSubtitle').textContent = `${b.product} · ${b.env} · ${env?.projectId || ''} / ${env?.region || ''}`;
+      document.getElementById('stepList').innerHTML = '';
+      document.getElementById('reportBody').innerHTML = '';
+      document.getElementById('reportBody').classList.add('hidden');
+      document.getElementById('reportPlaceholder').classList.remove('hidden');
+      document.getElementById('reportError').classList.add('hidden');
+      document.getElementById('cancelBtn').classList.remove('hidden');
+
+      document.getElementById('panelRoot').classList.remove('hidden');
+      // trigger slide-in
+      requestAnimationFrame(() => {
+        document.getElementById('panelInner').classList.remove('panel-enter');
+        document.getElementById('panelInner').classList.add('panel-active');
+      });
+
+      runStream(b);
+    }
+    function closePanel() {
+      cancelStream();
+      document.getElementById('panelInner').classList.add('panel-enter');
+      document.getElementById('panelInner').classList.remove('panel-active');
+      setTimeout(() => document.getElementById('panelRoot').classList.add('hidden'), 200);
+    }
+    function cancelStream() {
+      streamTimers.forEach(t => clearTimeout(t));
+      streamTimers = [];
+      document.getElementById('cancelBtn').classList.add('hidden');
+    }
+
+    function addStep(id, label) {
+      const li = document.createElement('li');
+      li.id = 'step-' + id;
+      li.className = 'step-in flex items-start gap-3';
+      li.innerHTML = `
+        <div class="step-icon mt-0.5 h-5 w-5 flex items-center justify-center">
+          <div class="spinner h-4 w-4 text-primary"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="step-label text-sm font-medium text-primary">${label}</div>
+          <div class="step-detail mt-0.5 text-xs text-gray-500 hidden"></div>
+        </div>
+      `;
+      document.getElementById('stepList').appendChild(li);
+    }
+    function completeStep(id, detail) {
+      const li = document.getElementById('step-' + id);
+      if (!li) return;
+      li.querySelector('.step-icon').innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-emerald-500"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg>
+      `;
+      const lbl = li.querySelector('.step-label');
+      lbl.classList.remove('text-primary');
+      lbl.classList.add('text-gray-700', 'dark:text-gray-300');
+      if (detail) {
+        const d = li.querySelector('.step-detail');
+        d.textContent = detail;
+        d.classList.remove('hidden');
+      }
+    }
+
+    function renderReport(b) {
+      const env = CATALOG[b.product]?.[b.env];
+      document.getElementById('reportPlaceholder').classList.add('hidden');
+      const body = document.getElementById('reportBody');
+      body.classList.remove('hidden');
+      body.innerHTML = `
+        <h1>${b.service} — Diagnostic Report</h1>
+        <p class="text-xs text-gray-500">Product <code>${b.product}</code> · Environment <code>${b.env}</code> · Project <code>${env?.projectId || ''}</code></p>
+
+        <h2>Summary</h2>
+        <p>Service is <strong>healthy</strong> over the last 1 hour. No active incidents. Error rate is within normal bounds (&lt; 0.4% of requests).</p>
+
+        <h2>Recent activity</h2>
+        <ul>
+          <li><strong>230</strong> log entries in the last hour (<strong>3</strong> ERROR, <strong>11</strong> WARNING, the rest INFO/DEBUG).</li>
+          <li>p95 latency: <code>187ms</code> (down 12% vs 24h prior).</li>
+          <li>Memory utilisation: <code>62%</code> average, peak <code>71%</code>.</li>
+        </ul>
+
+        <h2>Top error patterns</h2>
+        <ul>
+          <li><code>context deadline exceeded</code> calling <code>pricing-v1</code> — 2 occurrences. Both recovered on retry.</li>
+          <li><code>panic: nil pointer dereference</code> — 1 occurrence in <code>handler.go:142</code>. Worth investigating.</li>
+        </ul>
+
+        <h2>Suggested next steps</h2>
+        <ul>
+          <li>Open the Logs page filtered to ERROR severity for the panic above.</li>
+          <li>Check <code>pricing-v1</code> latency for the time window of the deadline errors.</li>
+        </ul>
+      `;
+      document.getElementById('cancelBtn').classList.add('hidden');
+    }
+
+    function runStream(b) {
+      const STEP_DELAY = 900; // ms between events
+      const schedule = (fn, t) => { streamTimers.push(setTimeout(fn, t)); };
+
+      // step 1
+      addStep('fetch_logs', 'Fetching recent logs...');
+      schedule(() => completeStep('fetch_logs', 'Got 230 entries'), STEP_DELAY);
+
+      // step 2
+      schedule(() => addStep('fetch_metrics', 'Fetching metrics...'), STEP_DELAY + 200);
+      schedule(() => completeStep('fetch_metrics', 'Got 7 series'), STEP_DELAY * 2 + 200);
+
+      // step 3
+      schedule(() => addStep('build_summary', 'Building summary...'), STEP_DELAY * 2 + 400);
+      schedule(() => completeStep('build_summary'), STEP_DELAY * 3 + 400);
+
+      // final artifact
+      schedule(() => renderReport(b), STEP_DELAY * 3 + 600);
+    }
+
+    // ===== Bootstrap =====
+    renderBookmarks();
+  </script>
+</body>
+</html>
